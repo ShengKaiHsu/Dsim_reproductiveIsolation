@@ -313,7 +313,8 @@ annot_colors=list(population=c(Anc.="forestgreen",H01="brown1",H02="chocolate",H
                                H10="darkorange"))
 rownames(annot_col)=colnames(count_dat_use_sort_filtered)
 
-pca_goi=prcomp(t(log10(cpm(count_dat_use_sort_filtered[intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]]),]))))
+repr.div.gene = intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]])                  
+pca_goi=prcomp(t(log10(cpm(count_dat_use_sort_filtered[repr.div.gene,]))))
 ve_goi=pca_goi$sdev^2/sum(pca_goi$sdev^2)
 sum(ve_goi[1:9])
 
@@ -356,20 +357,20 @@ for (i in 5:6){
 dev.off()
 
 
-pheatmap(log10(cpm(count_dat_use_sort_filtered[intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]]),])),
+pheatmap(log10(cpm(count_dat_use_sort_filtered[repr.div.gene,])),
          scale="row",show_rownames = F,cluster_cols = F,show_colnames = F,cutree_rows = 2,
          annotation_col = annot_col,annotation_colors = annot_colors,annotation_names_col = F,
          filename = "/Volumes/Temp1/shengkai/CHC/figure3b.png",height = 8.7,width = 8.7,unit="cm",res=600,
          pointsize=8)
 
-avg_repro_gene=apply(cpm(count_dat_use_sort_filtered[intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]]),]),1,function(x) tapply(x,annot_col$population,mean))
+avg_repro_gene=apply(cpm(count_dat_use_sort_filtered[repr.div.gene,]),1,function(x) tapply(x,annot_col$population,mean))
 dist_repro_genes=dist(log10(avg_repro_gene))
 
 #1-3: 1.43
 #1-6: 1.58
 #3-6: 1.27
 
-evoavg_repro_gene=apply(cpm(count_dat_use_sort_filtered[intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]]),]),1,function(x) tapply(x,substr(colnames(count_dat_use_sort_filtered),1,1),mean))
+evoavg_repro_gene=apply(cpm(count_dat_use_sort_filtered[repr.div.gene,]),1,function(x) tapply(x,substr(colnames(count_dat_use_sort_filtered),1,1),mean))
 logFCavg_repro_gene=log2(evoavg_repro_gene[2,]/evoavg_repro_gene[1,])
 evoavg_all=apply(cpm(count_dat_use_sort_filtered[sig_dvg_gene,]),1,function(x) tapply(x,substr(colnames(count_dat_use_sort_filtered),1,1),mean))
 logFCavg_all=log2(evoavg_all[2,]/evoavg_all[1,])
