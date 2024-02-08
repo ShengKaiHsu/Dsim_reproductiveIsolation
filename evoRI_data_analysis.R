@@ -204,8 +204,8 @@ points(ifelse(as.vector(t(LRT_res_merged[OBP_tab[,1],c(1,6)]))>0,as.vector(t(LRT
 
 
 ####gene expression divergence####
-# count_dat=read.csv("/Volumes/Temp1/shengkai/remap_run/monster_fullset_readcounts.csv",header = T,row.names = 1)
-count_dat_use=count_corrected[,strsplit2(colnames(count_corrected),"_")[,3]%in%"m"&substr(colnames(count_corrected),1,1)%in%c("B","H")]
+count_dat=read.csv("/Volumes/Temp1/shengkai/remap_run/monster_fullset_readcounts.csv",header = T,row.names = 1)
+count_dat_use=count_dat[,strsplit2(colnames(count_dat),"_")[,3]%in%"m"&substr(colnames(count_dat),1,1)%in%c("B","H")]
 count_dat_use_sort=count_dat_use[,order(colnames(count_dat_use))]
 count_dat_use_sort_filtered=count_dat_use_sort[apply(cpm(count_dat_use_sort),1,function(x) !sum(x<0.1)>=1),]
 
