@@ -313,8 +313,7 @@ annot_colors=list(population=c(Anc.="forestgreen",H01="brown1",H02="chocolate",H
                                H10="darkorange"))
 rownames(annot_col)=colnames(count_dat_use_sort_filtered)
 
-repr.div.gene = intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]])                  
-pca_goi=prcomp(t(log10(cpm(count_dat_use_sort_filtered[repr.div.gene,]))))
+pca_goi=prcomp(t(log10(cpm(count_dat_use_sort_filtered[intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]]),]))))
 ve_goi=pca_goi$sdev^2/sum(pca_goi$sdev^2)
 sum(ve_goi[1:9])
 
@@ -357,20 +356,20 @@ for (i in 5:6){
 dev.off()
 
 
-pheatmap(log10(cpm(count_dat_use_sort_filtered[repr.div.gene,])),
+pheatmap(log10(cpm(count_dat_use_sort_filtered[intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]]),])),
          scale="row",show_rownames = F,cluster_cols = F,show_colnames = F,cutree_rows = 2,
          annotation_col = annot_col,annotation_colors = annot_colors,annotation_names_col = F,
          filename = "/Volumes/Temp1/shengkai/CHC/figure3b.png",height = 8.7,width = 8.7,unit="cm",res=600,
          pointsize=8)
 
-avg_repro_gene=apply(cpm(count_dat_use_sort_filtered[repr.div.gene,]),1,function(x) tapply(x,annot_col$population,mean))
+avg_repro_gene=apply(cpm(count_dat_use_sort_filtered[intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]]),]),1,function(x) tapply(x,annot_col$population,mean))
 dist_repro_genes=dist(log10(avg_repro_gene))
 
 #1-3: 1.43
 #1-6: 1.58
 #3-6: 1.27
 
-evoavg_repro_gene=apply(cpm(count_dat_use_sort_filtered[repr.div.gene,]),1,function(x) tapply(x,substr(colnames(count_dat_use_sort_filtered),1,1),mean))
+evoavg_repro_gene=apply(cpm(count_dat_use_sort_filtered[intersect(sig_dvg_gene,genesInTerm(tgd,"GO:0032504")[[1]]),]),1,function(x) tapply(x,substr(colnames(count_dat_use_sort_filtered),1,1),mean))
 logFCavg_repro_gene=log2(evoavg_repro_gene[2,]/evoavg_repro_gene[1,])
 evoavg_all=apply(cpm(count_dat_use_sort_filtered[sig_dvg_gene,]),1,function(x) tapply(x,substr(colnames(count_dat_use_sort_filtered),1,1),mean))
 logFCavg_all=log2(evoavg_all[2,]/evoavg_all[1,])
@@ -1220,7 +1219,11 @@ kru_res4=kruskal(avg_total,dat_new$cross[1:45],0.05,"none")
 png("/Volumes/Temp1/shengkai/CHC/FigureS8.png",height = 8.7,width = 8.7,units = "cm",res=600,pointsize = 8)
 par(mar=c(4,5,2,2))
 boxplot((dat_new$total[1:45]+dat_new$total[-(1:45)])/2~dat_new$cross[1:45],
-        names = NA,ylab = "Number of viable progeny",xlab ="",col = rep(c("white","grey60"),each = 3))
+        names = NA,ylab = "Number of viable progeny",xlab ="",col = rep(c("white","grey60"),each = 3),
+        border = c("salmon","royalblue","forestgreen","purple","gold","cyan"))
+points(1:6,tapply(dat_new$total,dat_new$cross,mean),pch = 19, cex = 1,
+       col =c("salmon","royalblue","forestgreen","purple","gold","cyan"))
+points(4:6,c(34.7,33.15,35.65),pch = 17,cex = 1.5,col = c("purple","gold","cyan"))
 mtext(c("Pop. 1","H1","H3","H6","H1","H1","H3"),at = c(0,1:6),side = 1,line = 1)
 mtext(c("Pop. 2","H1","H3","H6","H3","H6","H6"),at = c(0,1:6),side = 1,line = 2.5)
 dev.off()
@@ -1271,14 +1274,18 @@ with(dat_new,wilcox.test(abs(ratio[P==M]),abs(ratio[P!=M])))
 with(dat_new,t.test((total[P==M][1:15]+total[P==M][-(1:15)])/2,(total[P!=M][1:30]+total[P!=M][-(1:30)])/2,alternative = "greater"))
 with(dat_new,wilcox.test((total[P==M][1:15]+total[P==M][-(1:15)])/2,(total[P!=M][1:30]+total[P!=M][-(1:30)])/2,alternative = "greater"))
 
-png("/Volumes/Temp1/shengkai/CHC/Figure4b.png",height = 8.7,width = 8.7,units = "cm",res=600,pointsize = 8)
-par(mar=c(4,5,2,2))
-with(dat_new,boxplot(total[P==M],total[P!=M],names=c("Within-replicate","cross-replicate"),
-                     ylab="Numbers of viable progenies",col=c("white","grey60")))
-text(1.5,55,labels = "p = 0.024")
-dev.off()
+library(lme4)
+dat_new$group = as.numeric(dat_new$P==dat_new$M)
+dat_new$comb = paste0(dat_new$P,dat_new$M)
 
-png("/Volumes/Temp1/shengkai/CHC/Figure4b_new.png",height = 8.7,width = 8.7,units = "cm",res=600,pointsize = 8)
+fm5 = with(dat_new,glmer(total ~ group + (1|cross),family = poisson(link = 'log')))
+fm6 = with(dat_new,glmer(total ~ (1|cross),family = poisson(link = 'log')))
+fm7 = with(dat_new,glm(total ~ group,family = poisson(link = 'log')))
+anova(fm5,fm6)
+anova(fm5,fm7)
+
+
+png("/Volumes/Temp1/shengkai/CHC/Figure4b_new2.png",height = 8.7,width = 8.7,units = "cm",res=600,pointsize = 8)
 par(mar=c(4,5,2,2))
 with(dat_new,boxplot((total[P==M][1:15]+total[P==M][-(1:15)])/2,
                      (total[P!=M][1:30]+total[P!=M][-(1:30)])/2,
@@ -1287,10 +1294,3 @@ with(dat_new,boxplot((total[P==M][1:15]+total[P==M][-(1:15)])/2,
 text(1.5,49,labels = "p = 0.031")
 dev.off()
 
-png("./progeny_assay_v1.png",height = 8.7,width = 15.4,units = "cm",res=600,pointsize = 8)
-par(mfrow=c(1,2))
-with(dat_new,boxplot(total[P==M],total[P!=M],names=c("matched","mismatched"),main="Viability",
-                     ylab="Numbers of viable progenies"))
-with(dat_new,boxplot(abs(ratio[P==M]),abs(ratio[P!=M]),names=c("matched","mismatched"),
-                     main="Sex allocation",ylab=expression(abs(log[2]("Male"/"Female")))))
-dev.off()
